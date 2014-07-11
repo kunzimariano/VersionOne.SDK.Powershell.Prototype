@@ -78,8 +78,7 @@ function Get-V1Metamodel {
 		($_).AttributeDefinition |
         % {			
 			$assetObject | Add-Member @{$_.Name = $_.Name }
-        }
-		#$assetObject | Add-Member -MemberType ScriptMethod -Name GetAsset -Value $GetAsset
+        }		
 		$client | Add-Member @{ $assetToken= $assetObject}		
     }
     $client
@@ -89,20 +88,30 @@ function Start-V1Query {
     [CmdletBinding()]
     param(
     [Parameter(ValueFromPipeline=$true)]$asset, 
-    [Parameter(Mandatory=$False)]$id)
+    [Parameter(Mandatory=$false)]$id)
 	
 	$queryObject = [pscustomobject] @{ 
 		Token = $asset.Token;
 		ID = $id;
 		SelectedFields = $null;
-		WhereCondition = $null
+		WhereCondition = $null;
+        Executed = $false
 	}
 	
 	$queryObject
 }
 
 function Invoke-V1Select {
-	param([string[]]$fields)
+    [CmdletBinding()]
+	param(
+    [Parameter(ValueFromPipeline=$true)]$queryObject, 
+    [Parameter(Mandatory=$true)][string[]]$fields)
+    
+    if($queryObject.SelectedFields -ne $null) { return $queryObject }
+    
+    $queryObject.SelectedFields = $fields
+    
+    $queryObject
 
 }
 
@@ -112,6 +121,8 @@ function Invoke-V1Where {
 
 function Invoke-V1Query {
 	param([Parameter(ValueFromPipeline=$true)]$queryObject)
+    
+    if($queryObject.Executed -eq $true) { return }
 	
 	$url = Get-RequestUrl $queryObject
 	
@@ -125,7 +136,13 @@ function Invoke-V1Query {
 }
 
 $m = Get-V1Metamodel
-($m.Story) | Start-V1Query -id 37741 | Invoke-V1Query
+$s = $m.Story
+
+$s |
+Start-V1Query -id 37741 |
+Invoke-V1Select -fields $s.Name, $s.Id | 
+Invoke-V1Query
+
 #$story = Start-V1Query $m.Story 37741 | Invoke-V1Query
 #$members = Start-V1Query $m.Member | Invoke-V1Query
 
