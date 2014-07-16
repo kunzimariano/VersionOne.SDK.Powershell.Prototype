@@ -11,16 +11,6 @@ function Get-MetaUrl {
     "https://www14.v1host.com/v1sdktesting/meta.v1/"
 }
 
-#TODO: Refactor this
-function Get-RequestUrl {
-	param($queryObject)
-	
-	if($queryObject.Id -eq $null) {
-		return ((Get-RestUrl) + $queryObject.Token)
-	}
-	((Get-RestUrl) + $queryObject.Token + "/$($queryObject.Id)")	
-}
-
 function Get-MultipleAssets {
 	param($xmlObject)
 	# TODO: review if using an array or something else
@@ -63,9 +53,6 @@ function Get-AuthorizationHeader {
     @{"AUTHORIZATION"=$auth}
 }
 
-# At the current state this creates and object with every asset and their properties/attributes.
-# The idea of having every attribute is to use that to build queries so we don't have to remember them, 
-# not sure if that is what we will end up doing.
 function Get-V1Metamodel {
     $client = [pscustomobject] @{}    
     (Get-MetaObject).Meta.Assettype |
@@ -107,16 +94,32 @@ function Invoke-V1Select {
     [Parameter(ValueFromPipeline=$true)]$queryObject, 
     [Parameter(Mandatory=$true)][string[]]$fields)
     
-    if($queryObject.SelectedFields -ne $null) { return $queryObject }
-    
-    $queryObject.SelectedFields = $fields
-    
+    if($queryObject.SelectedFields -ne $null) { return $queryObject }    
+    $queryObject.SelectedFields = [string]::Join(",",$fields)
     $queryObject
 
 }
 
 function Invoke-V1Where {
 
+}
+
+function Get-RequestUrl {
+	param($queryObject)
+    
+    $url = (Get-RestUrl) + $queryObject.Token
+	
+	if($queryObject.Id -ne $null) {
+		$url += "/$($queryObject.Id)"
+	}
+    
+    $chainSymbol = "?"
+    
+    if($queryObject.SelectedFields -ne $null) {
+        $url += "$($chainSymbol)sel=$($queryObject.SelectedFields)"
+        $chainSymbol = "&"
+    }    
+    $url
 }
 
 function Invoke-V1Query {
@@ -127,6 +130,7 @@ function Invoke-V1Query {
 	$url = Get-RequestUrl $queryObject
 	
 	$xmlObject = Invoke-RestMethod $url -Headers (Get-AuthorizationHeader)
+	$queryObject.Executed = $true
 	if($queryObject.Id -eq $null) {
 		Get-MultipleAssets $xmlObject
 	}
@@ -138,10 +142,10 @@ function Invoke-V1Query {
 $m = Get-V1Metamodel
 $s = $m.Story
 
-$s |
+$r = ($s |
 Start-V1Query -id 37741 |
-Invoke-V1Select -fields $s.Name, $s.Id | 
-Invoke-V1Query
+Invoke-V1Select -fields $s.Name, $s.ID, $s.ChangeDate | 
+Invoke-V1Query)
 
 #$story = Start-V1Query $m.Story 37741 | Invoke-V1Query
 #$members = Start-V1Query $m.Member | Invoke-V1Query
@@ -154,9 +158,3 @@ Invoke-V1Query
 #Invoke-V1Query
 
 #https://www14.v1host.com/v1sdktesting/rest-1.v1/Data/Member?sel=Name,Email,DefaultRole.Name&where=OwnedWorkitems=%27Story:1071%27
-
-
-
-#$meta = Get-MetaObject
-
-
