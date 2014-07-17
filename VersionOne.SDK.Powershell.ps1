@@ -71,11 +71,10 @@ function Get-V1Metamodel {
     $client
 }
 
-function Start-V1Query {
-    [CmdletBinding()]
+function Start-V1Query {    
     param(
     [Parameter(ValueFromPipeline=$true)]$asset, 
-    [Parameter(Mandatory=$false)]$id)
+    [Parameter(Mandatory=$false,Position=0)]$id)
 	
 	$queryObject = [pscustomobject] @{ 
 		Token = $asset.Token;
@@ -88,11 +87,10 @@ function Start-V1Query {
 	$queryObject
 }
 
-function Invoke-V1Select {
-    [CmdletBinding()]
+function Invoke-V1Select {    
 	param(
     [Parameter(ValueFromPipeline=$true)]$queryObject, 
-    [Parameter(Mandatory=$true)][string[]]$fields)
+    [Parameter(Mandatory=$true,Position=0)][string[]]$fields)
     
     if($queryObject.SelectedFields -ne $null) { return $queryObject }    
     $queryObject.SelectedFields = [string]::Join(",",$fields)
@@ -100,8 +98,24 @@ function Invoke-V1Select {
 
 }
 
-function Invoke-V1Where {
+function ParseExpression {
+    param($expression)
+    #logical operators 
+    #   -and -or 
+    #   ';' '|'
+    
+    #comparison-operator 
+    #   -eq -ne -lt -le -gt -ge
+    #   '=' | '!=' | '<' | '<=' | '>' | '>='
+}
 
+function Invoke-V1Where {    
+	param(
+    [Parameter(ValueFromPipeline=$true)]$queryObject, 
+    [Parameter(Mandatory=$true,Position=0)]$filter)
+    
+    $expresion = $filter.Ast.EndBlock.Extent.Text
+    $queryObject
 }
 
 function Get-RequestUrl {
@@ -139,22 +153,21 @@ function Invoke-V1Query {
 	}
 }
 
-$m = Get-V1Metamodel
-$s = $m.Story
+$s = (Get-V1Metamodel).Story
 
 $r = ($s |
-Start-V1Query -id 37741 |
-Invoke-V1Select -fields $s.Name, $s.ID, $s.ChangeDate | 
+Start-V1Query 37741 |
+Invoke-V1Select $s.Name, $s.ID, $s.ChangeDate |
+#Invoke-V1Where { $s.Name -eq "SomeName" -and $s.AssetType -eq "someType" } |
 Invoke-V1Query)
 
-#$story = Start-V1Query $m.Story 37741 | Invoke-V1Query
-#$members = Start-V1Query $m.Member | Invoke-V1Query
-
-#TODO:
-#$s= $m.Story
-#Start-V1Query $s |
-#Invoke-V1Select $s.Name $s.Id | 
-#Invoke-V1Where $s.Name -eq "SomeName" | 
+#$m = (Get-V1Metamodel).Member
+#$members = $m |
+#Start-V1Query |
+#Invoke-V1Select $m.Username, $m.Email | 
 #Invoke-V1Query
 
-#https://www14.v1host.com/v1sdktesting/rest-1.v1/Data/Member?sel=Name,Email,DefaultRole.Name&where=OwnedWorkitems=%27Story:1071%27
+
+#https://www14.v1host.com/v1sdktesting/rest-1.v1/Data/Member
+#?sel=Name,Email,DefaultRole.Name
+#&where=OwnedWorkitems=%27Story:1071%27
