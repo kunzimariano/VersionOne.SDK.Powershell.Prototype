@@ -113,8 +113,7 @@ function Start-V1Query {
 		ID = $id;
 		SelectExpression = $null;
 		WhereExpression = $null;
-        Executed = $false;
-		Asset = $asset
+        Executed = $false		
 	}
 	
 	$queryObject

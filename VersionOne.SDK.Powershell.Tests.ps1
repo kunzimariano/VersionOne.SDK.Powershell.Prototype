@@ -31,6 +31,16 @@ function getMetaSample {
 '@
 }
 
+function getNewQueryObject {
+    [pscustomobject] @{ 
+		Token = $null;
+		ID = $null;
+		SelectExpression = $null;
+		WhereExpression = $null;
+        Executed = $false;		
+	}
+}
+
 Describe "Get-V1Metamodel" {
     Context "when calling it" {
         Mock -moduleName $moduleName -commandName Get-MetaObject -mockWith { [xml](getMetaSample)} -verifiable
@@ -64,6 +74,21 @@ Describe "Start-V1Query" {
             $q.SelectExpression | Should be $null
             $q.WhereExpression | Should be $null
             $q.Executed | Should be $false
+        }
+    }
+}
+
+Describe "Invoke-V1Select" {
+    Context "when calling it with a new queryObject" {        
+        $q = getNewQueryObject | Invoke-V1Select 'name','email','date'
+        
+        It "returns the same query object but properly modified" {
+            $q | Should not be $null            
+            $q.Id | Should be $null
+            $q.Token | Should be $null
+            $q.SelectExpression | Should be 'name,email,date'
+            $q.WhereExpression | Should be $null
+            $q.Executed | Should be $false        
         }
     }
 }
