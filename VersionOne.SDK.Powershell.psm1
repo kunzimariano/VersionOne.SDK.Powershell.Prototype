@@ -115,8 +115,8 @@ function Start-V1Query {
 	$queryObject = [pscustomobject] @{ 
 		Token = $asset.Token;
 		ID = $id;
-		SelectedFields = $null;
-		WhereCondition = $null;
+		SelectExpression = $null;
+		WhereExpression = $null;
         Executed = $false;
 		Asset = $asset
 	}
@@ -130,8 +130,8 @@ function Invoke-V1Select {
     [Parameter(ValueFromPipeline=$true)]$queryObject, 
     [Parameter(Mandatory=$true,Position=0)][string[]]$fields)
     
-    if($queryObject.SelectedFields -ne $null) { return $queryObject }    
-    $queryObject.SelectedFields = [string]::Join(",",$fields)
+    if($queryObject.SelectExpression -ne $null) { return $queryObject }    
+    $queryObject.SelectExpression = [string]::Join(",",$fields)
     $queryObject
 
 }
@@ -174,7 +174,7 @@ function Invoke-V1Where {
     [Parameter(Mandatory=$true,Position=0)]$filter)
     
     $psExpression = $filter.Ast.EndBlock.Extent.Text
-	$queryObject.WhereCondition = ParsePSExpression $psExpression
+	$queryObject.WhereExpression = ParsePSExpression $psExpression
 	$queryObject
 }
 Set-Alias vwhere Invoke-V1Where
@@ -190,13 +190,13 @@ function Get-RequestUrl {
     
     $chainSymbol = "?"
     
-    if($queryObject.SelectedFields -ne $null) {
-        $url += "$($chainSymbol)sel=$($queryObject.SelectedFields)"
+    if($queryObject.SelectExpression -ne $null) {
+        $url += "$($chainSymbol)sel=$($queryObject.SelectExpression)"
         $chainSymbol = "&"
     }
 	
-	if($queryObject.WhereCondition -ne $null) {
-		$url += "$($chainSymbol)where=$($queryObject.WhereCondition)"
+	if($queryObject.WhereExpression -ne $null) {
+		$url += "$($chainSymbol)where=$($queryObject.WhereExpression)"
         $chainSymbol = "&"	
 	}
 	#Write-Host $url
