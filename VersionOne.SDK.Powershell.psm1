@@ -74,13 +74,13 @@ function Get-AuthorizationHeader {
 }
 
 function Get-V1Metamodel {
-    $client = [pscustomobject] @{}    
+    $metaModel = [pscustomobject] @{}    
     (Get-MetaObject).Meta.Assettype |
     % { 
 		# TODO: avoid abstracts?
         $assetToken = $_.Token
 		$assetObject = [pscustomobject] @{ Token = $assetToken}
-		$client | Add-Member @{ $assetToken= $assetObject}
+		$metaModel | Add-Member @{ $assetToken= $assetObject}
                 
         # attribute definition for the current asset
 		($_).AttributeDefinition |
@@ -95,11 +95,11 @@ function Get-V1Metamodel {
 		# operations:
 		if($_.Operation -eq $null) {return}
 		$assetObject | Add-Member @{Operation = [pscustomobject] @{} } -Force		
-		$_.Operation | % {			
+		$_.Operation | % {
 			$assetObject.Operation | Add-Member @{ $_.Name = $_.Name }		
 		}
     }
-    $client
+    $metaModel
 }
 Set-Alias vmeta Get-V1MetaModel
 
