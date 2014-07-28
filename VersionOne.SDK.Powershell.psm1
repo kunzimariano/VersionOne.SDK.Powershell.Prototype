@@ -137,27 +137,29 @@ function Invoke-V1Select {
 }
 Set-Alias vselect Invoke-V1Select
 
+$tokensTable = @{ 
+    '-and' = ';';
+	'-or' = '|';
+	'-eq' = '=';
+	'-ne' = '!=';
+	'-lt'= '<';
+    '-le'= '<=';
+	'-gt'= '>';
+	'-ge'= '>='
+}
+
 function ParsePSExpression {
-    param($expression)
-	$tokensTable = @{ 
-		'-and' = ';';
-		'-or' = '|';
-		'-eq' = '=';
-		'-ne' = '!=';
-		'-lt'= '<';
-		'-le'= '<=';
-		'-gt'= '>';
-		'-ge'= '>='
-	}
+    param($expression)	
 	
 	$tokens = @()
-	$expression -split " " | % {		
-		if($tokensTable.ContainsKey($_)){
-			$tokens+=$tokensTable[$_]
-		}
-		elseif($_.StartsWith('$')) {
+	$expression -split " " | % {
+        if($_.StartsWith('$')) {
+            #it removes '$.'            
 			$tokens += $_ -replace '\$[a-zA-Z]*?\.',''
 		}
+		elseif($tokensTable.ContainsKey($_)){
+			$tokens+=$tokensTable[$_]
+		}		
 		else {
 			$tokens+=$_
 		}
