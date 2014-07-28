@@ -58,14 +58,10 @@ function Get-SingleAsset {
 	$result
 }
 
-function Invoke-Meta {
-    if(Test-Path $metaFile) { return }
-    $metaUrl = Get-MetaUrl
-	Invoke-WebRequest (Get-MetaUrl) -OutFile $metaFile
-}
-
 function Get-MetaObject {
-    Invoke-Meta
+    if(-not (Test-Path $metaFile)) {
+        Invoke-WebRequest (Get-MetaUrl) -OutFile $metaFile
+    }    
 	[xml](Get-Content $metaFile)
 }
 
