@@ -92,3 +92,29 @@ Describe "Invoke-V1Select" {
         }
     }
 }
+
+Describe "Invoke-V1Where" {
+    Context "when calling it with a new queryObject" {        
+        $q = getNewQueryObject | Invoke-V1Where { $s.Name -eq 'My New Story' } 
+        
+        It "returns the same query object but properly modified" {
+            $q | Should not be $null            
+            $q.Id | Should be $null
+            $q.Token | Should be $null
+            $q.SelectExpression | Should be $null
+            $q.WhereExpression | Should be "Name='My New Story'"
+            $q.Executed | Should be $false     
+        }
+        
+        $q = getNewQueryObject | Invoke-V1Where { $s.Name.More -eq 'Some Value' -and $s.Status.Name -ne 'Done'  } 
+        
+        It "returns the same query object but properly modified" {
+            $q | Should not be $null            
+            $q.Id | Should be $null
+            $q.Token | Should be $null
+            $q.SelectExpression | Should be $null
+            $q.WhereExpression | Should be "Name.More='Some Value';Status.Name!='Done'"
+            $q.Executed | Should be $false     
+        }
+    }
+}

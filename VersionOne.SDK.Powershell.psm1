@@ -133,33 +133,31 @@ function Invoke-V1Select {
 Set-Alias vselect Invoke-V1Select
 
 $tokensTable = @{ 
-    '-and' = ';';
-	'-or' = '|';
-	'-eq' = '=';
-	'-ne' = '!=';
-	'-lt'= '<';
-    '-le'= '<=';
-	'-gt'= '>';
-	'-ge'= '>='
+    'And' = ';';
+	'Or' = '|';
+	'Ieq' = '=';
+	'Ine' = '!=';
+	'Ilt'= '<';
+    'Ile'= '<=';
+	'Igt'= '>';
+	'Ige'= '>='
 }
 
 function ParsePSExpression {
-    param($expression)	
-	
-	$tokens = @()
-	$expression -split " " | % {
-        if($_.StartsWith('$')) {
-            #it removes '$.'            
-			$tokens += $_ -replace '\$[a-zA-Z]*?\.',''
-		}
-		elseif($tokensTable.ContainsKey($_)){
-			$tokens+=$tokensTable[$_]
-		}		
-		else {
-			$tokens+=$_
-		}
-	}
-	$restExpression = [string]::Join("",$tokens)
+    param($expression)
+    $psTokens = $null
+    $parseErrors = $null
+    $ast = [System.Management.Automation.Language.Parser]::ParseInput($expression, [ref]$psTokens, [ref]$parseErrors)
+    
+    $tokens = @()
+    $previousToken = $null
+    $psTokens | % {        
+        if($_.Kind -eq 'Dot' -and $previousToken -eq 'Identifier') {$tokens += '.'}
+        elseif(($_.Kind -eq 'Identifier') -or ($_.Kind -eq 'StringLiteral')){ $tokens += $_.Text }
+        elseif($tokensTable.ContainsKey([string]$_.Kind)){ $tokens+=($tokensTable[[string]$_.Kind]) }
+        $previousToken = $_.Kind
+    }
+    $restExpression = [string]::Join("",$tokens)
 	$restExpression
 }
 
