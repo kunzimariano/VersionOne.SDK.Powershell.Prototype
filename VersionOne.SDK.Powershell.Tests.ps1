@@ -36,7 +36,7 @@ function getNewQueryObject {
 		Token = $null;
 		ID = $null;
 		SelectExpression = $null;
-		WhereExpression = $null;
+		WhereExpression = $null;        
         Executed = $false;		
 	}
 }
@@ -118,3 +118,13 @@ Describe "Invoke-V1Where" {
         }
     }
 }
+
+<#Describe "Invoke-V1Op" {
+    Context "when calling it" {        
+        $result = $s | Invoke-V1Op 'someOperation'
+        
+        It "returns the operation result" {
+            $result | Should be 'success'            
+        }
+    }
+}#>

@@ -35,12 +35,13 @@ function Get-MetaUrl {
     "$baseUrl/meta.v1/"
 }
 
+#TODO: refactor these 2 functions
 function Get-MultipleAssets {
-	param($xmlObject)
-	# TODO: review if using an array or something else
+	param($xmlObject)	
 	$result = @()
 	$xmlObject.Assets.Asset | % {
 		$asset = [pscustomobject]@{}
+        $asset | Add-Member @{ OID = $_.id}
 		$_.Attribute | % {
 			$asset | Add-Member @{ $_.name = $_.InnerText }
 		}
@@ -52,6 +53,7 @@ function Get-MultipleAssets {
 function Get-SingleAsset {
 	param($xmlObject)
 	$result = [pscustomobject]@{}
+    $result | Add-Member @{ OID = $xmlObject.Asset.id}
 	$xmlObject.Asset.Attribute | % {
 		$result | Add-Member @{ $_.name = $_.InnerText }
 	}
@@ -112,7 +114,7 @@ function Start-V1Query {
 		Token = $asset.Token;
 		ID = $id;
 		SelectExpression = $null;
-		WhereExpression = $null;
+		WhereExpression = $null;        
         Executed = $false		
 	}
 	
@@ -192,7 +194,8 @@ function Get-RequestUrl {
 		$url += "$($chainSymbol)where=$($queryObject.WhereExpression)"
         $chainSymbol = "&"	
 	}
-	#Write-Host $url
+    
+	Write-Host $url
     $url
 }
 
@@ -214,4 +217,21 @@ function Invoke-V1Fetch {
 }
 Set-Alias vfetch Invoke-V1Fetch
 
-Export-ModuleMember -Function Get-V1MetaModel,Start-V1Query,Invoke-V1Select,Invoke-V1Where,Invoke-V1Fetch -Alias vmeta,vquery,vselect,vwhere,vfetch
+function Invoke-V1Operation {
+    param(
+        [Parameter(ValueFromPipeline=$true,Mandatory=$true)]$asset,
+        [Parameter(Mandatory=$true,Position=0)]$operation)
+    
+    
+    $parts = $asset.OID.Split(':');
+    $token = $parts[0]
+    $id = $parts[1]
+
+    $url = (Get-RestUrl) +  "$token/$id" + '?op=' + $operation
+    
+    echo $url
+    Invoke-WebRequest -Method Post -Uri $url -Headers (Get-AuthorizationHeader)    
+}
+Set-Alias vop Invoke-V1Operation
+
+Export-ModuleMember -Function Get-V1MetaModel,Start-V1Query,Invoke-V1Select,Invoke-V1Where,Invoke-V1Fetch,Invoke-V1Operation -Alias vmeta,vquery,vselect,vwhere,vfetch,vop
